@@ -1,0 +1,6 @@
+*
+!esm/
+!lib/
+!ponyfill/
+!package.json
+!README.md

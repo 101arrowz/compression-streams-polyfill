@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "outDir": "esm",
+    "declaration": true
+  },
+  "include": ["src"]
+}

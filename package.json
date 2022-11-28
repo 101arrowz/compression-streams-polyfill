@@ -1,0 +1,31 @@
+{
+  "name": "compression-streams-polyfill",
+  "version": "0.1.0",
+  "author": "Arjun Barrett",
+  "main": "lib/index.js",
+  "types": "lib/global.d.ts",
+  "module": "esm/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./lib/global.d.ts",
+      "import": "./esm/index.mjs",
+      "require": "./lib/index.js"
+    },
+    "./ponyfill": {
+      "types": "./lib/ponyfill.d.ts",
+      "import": "./esm/ponyfill.mjs",
+      "require": "./lib/ponyfill.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json && node scripts/postbuild",
+    "prepack": ""
+  },
+  "dependencies": {
+    "fflate": "^0.7.4"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.3"
+  }
+}
