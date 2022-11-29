@@ -19,12 +19,15 @@ interface BaseStream {
   push: (chunk: Uint8Array, final?: boolean) => void;
 }
 
-const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Record<CompressionFormat, { new(): BaseStream; }>): CompressionStreamConstructor => {
+const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Record<CompressionFormat, { new(): BaseStream; }>, name: string): CompressionStreamConstructor => {
   class BaseCompressionStream extends TransformStreamBase<Uint8Array, Uint8Array> {
     constructor(format: CompressionFormat) {
+      if (!arguments.length) {
+        throw new TypeError(`Failed to construct '${name}': 1 argument required, but only 0 present.`);
+      }
       const Processor = processors[format];
       if (!Processor) {
-        throw new TypeError(`Unsupported compression format: '${format}'`)
+        throw new TypeError(`Failed to construct '${name}': Unsupported compression format: '${format}'`)
       }
       let compressor = new Processor();
       let cb: () => void;
@@ -57,11 +60,11 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
   return BaseCompressionStream;
 }
 export function makeCompressionStream(TransformStreamBase: typeof TransformStream): CompressionStreamConstructor {
-  class CompressionStream extends makeMulti(TransformStreamBase, compressors) {}
+  class CompressionStream extends makeMulti(TransformStreamBase, compressors, 'CompressionStream') {}
   return CompressionStream;
 }
 
 export function makeDecompressionStream(TransformStreamBase: typeof TransformStream): DecompressionStreamConstructor {
-  class DeompressionStream extends makeMulti(TransformStreamBase, decompressors) {}
+  class DeompressionStream extends makeMulti(TransformStreamBase, decompressors, 'DecompressionStream') {}
   return DeompressionStream;
 }

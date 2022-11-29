@@ -5,14 +5,16 @@ type Global = typeof globalThis & {
   DecompressionStream?: unknown;
 }
 
+declare var global: Global;
+
 const globals: Global =
-  typeof self == 'undefined'
-    ? typeof globalThis == 'undefined'
+  typeof globalThis == 'undefined'
+    ? typeof self == 'undefined'
       ? typeof global == 'undefined'
-        ? this
+        ? {} as Global
       : global
-    : globalThis
-  : self;
+    : self
+  : globalThis;
 
 if (typeof globals.CompressionStream == 'undefined') {
   globals.CompressionStream = makeCompressionStream(TransformStream);
