@@ -4,7 +4,7 @@ Lightweight polyfill/ponyfill for the Compression Streams API
 ## Usage
 
 Install:
-```
+```sh
 npm i compression-streams-polyfill # or yarn add, or pnpm add
 ```
 
@@ -24,7 +24,7 @@ If you want to load from a CDN in the browser:
 ```html
 <!--
 You should use either UNPKG or jsDelivr (i.e. only one of the following)
-You can specify the version, e.g. with compression-streams-polyfill@0.1.0
+You can specify the version, e.g. with compression-streams-polyfill@0.1.1
 -->
 <script src="https://unpkg.com/compression-streams-polyfill"></script>
 <script src="https://cdn.jsdelivr.net/npm/compression-streams-polyfill"></script>

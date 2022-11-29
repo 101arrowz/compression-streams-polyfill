@@ -1,7 +1,7 @@
 *
-!esm/
-!lib/
-!umd/
-!ponyfill/
+!esm/**
+!lib/**
+!umd/**
+!ponyfill/**
 !package.json
 !README.md
