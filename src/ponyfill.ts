@@ -20,7 +20,7 @@ interface BaseStream {
 }
 
 const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Record<CompressionFormat, { new(): BaseStream; }>, name: string): CompressionStreamConstructor => {
-  class BaseCompressionStream extends TransformStreamBase<Uint8Array, Uint8Array> {
+  class BaseCompressionStream extends TransformStreamBase<BufferSource, Uint8Array> {
     constructor(format: CompressionFormat) {
       if (!arguments.length) {
         throw new TypeError(`Failed to construct '${name}': 1 argument required, but only 0 present.`);
@@ -44,14 +44,20 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
         },
         transform: chunk => new Promise(resolve => {
           cb = resolve;
-          compressor.push(chunk);
+          if (chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
+          else if (ArrayBuffer.isView(chunk)) {
+            chunk = new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+          } else {
+            throw new TypeError("The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
+          }
+          compressor.push(chunk as Uint8Array);
         }),
         flush: () => new Promise(resolve => {
           cb = resolve;
           compressor.push(new Uint8Array(0), true);
         })
       }, {
-        size: chunk => chunk.byteLength,
+        size: chunk => chunk.byteLength | 0,
         highWaterMark: 65536
       })
     }
