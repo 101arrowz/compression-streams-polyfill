@@ -24,7 +24,7 @@ If you want to load from a CDN in the browser:
 ```html
 <!--
 You should use either UNPKG or jsDelivr (i.e. only one of the following)
-You can specify the version, e.g. with compression-streams-polyfill@0.1.2
+You can specify the version, e.g. with compression-streams-polyfill@0.1.4
 -->
 <script src="https://unpkg.com/compression-streams-polyfill"></script>
 <script src="https://cdn.jsdelivr.net/npm/compression-streams-polyfill"></script>
@@ -46,9 +46,9 @@ const DecompressionStream = makeDecompressionStream(TransformStream);
 ```
 
 ## Performance and size
-This polyfill is based on [fflate](https://github.com/101arrowz/fflate) and is therefore very fast. It tends to be between 20% slower and 5% faster than Chromium's native `CompressionStream` and `DecompressionStream`.
+This polyfill is based on [fflate](https://github.com/101arrowz/fflate) and is therefore very fast. It tends to be between 20% slower and 5% faster than Chromium's native `CompressionStream` and `DecompressionStream`. The `CompressionStream` polyfill also yields similar compression ratios to the native implementation.
 
-The polyfill's full bundle size is about 15kB minified, or 6kB gzipped.
+The polyfill's full bundle size is about 17kB minified, or 7kB gzipped.
 
 ## License
 MIT
