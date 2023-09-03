@@ -1,23 +1,79 @@
-import { AsyncDeflate, AsyncGzip, AsyncZlib, AsyncInflate, AsyncGunzip, AsyncUnzlib, AsyncFlateStreamHandler } from 'fflate';
-import { CompressionFormat, CompressionStreamConstructor, DecompressionStreamConstructor } from './types';
-export type { CompressionFormat, CompressionStream, CompressionStreamConstructor, DecompressionStream, DecompressionStreamConstructor } from './types';
+import {
+  AsyncDeflate, Deflate, AsyncGzip, AsyncZlib, AsyncInflate, AsyncGunzip,
+  AsyncUnzlib, AsyncFlateStreamHandler, FlateStreamHandler, Gzip, Zlib,
+  Gunzip, Unzlib, Inflate
+} from 'fflate';
+import {
+  CompressionFormat, CompressionStreamConstructor,
+  DecompressionStreamConstructor
+} from './types';
+export type {
+  CompressionFormat, CompressionStream, CompressionStreamConstructor,
+  DecompressionStream, DecompressionStreamConstructor
+} from './types';
 
-const compressors = {
-  'gzip': AsyncGzip,
-  'deflate': AsyncZlib,
-  'deflate-raw': AsyncDeflate
-};
-
-const decompressors = {
-  'gzip': AsyncGunzip,
-  'deflate': AsyncUnzlib,
-  'deflate-raw': AsyncInflate
-};
+interface BaseSyncStream {
+  ondata: FlateStreamHandler;
+  push: (chunk: Uint8Array, final?: boolean) => void;
+}
 
 interface BaseStream {
   ondata: AsyncFlateStreamHandler;
   push: (chunk: Uint8Array, final?: boolean) => void;
 }
+
+const wrapSync = (Stream: { new(): BaseSyncStream }) => {
+  class AsyncWrappedStream implements BaseStream {
+    ondata: AsyncFlateStreamHandler;
+    private i: InstanceType<typeof Stream>;
+
+    constructor() {
+      this.i = new Stream();
+      this.i.ondata = (data, final) => {
+        this.ondata(null, data, final);
+      }
+    }
+
+    push(data: Uint8Array, final?: boolean) {
+      try {
+        this.i.push(data, final)
+      } catch (err) {
+        this.ondata(err, null, final || false)
+      }
+    }
+  }
+
+  return AsyncWrappedStream
+}
+
+// Safari fix
+let hasWorker = 1;
+try {
+  const test = new AsyncDeflate();
+  test.terminate()
+} catch (err) {
+  hasWorker = 0;
+}
+
+const compressors = hasWorker ? {
+  'gzip': AsyncGzip,
+  'deflate': AsyncZlib,
+  'deflate-raw': AsyncDeflate
+} : {
+  'gzip': wrapSync(Gzip),
+  'deflate': wrapSync(Zlib),
+  'deflate-raw': wrapSync(Deflate)
+} ;
+
+const decompressors = hasWorker ? {
+  'gzip': AsyncGunzip,
+  'deflate': AsyncUnzlib,
+  'deflate-raw': AsyncInflate
+} : {
+  'gzip': wrapSync(Gunzip),
+  'deflate': wrapSync(Unzlib),
+  'deflate-raw': wrapSync(Inflate)
+} ;
 
 const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Record<CompressionFormat, { new(): BaseStream; }>, name: string): CompressionStreamConstructor => {
   class BaseCompressionStream extends TransformStreamBase<BufferSource, Uint8Array> {
@@ -66,11 +122,9 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
   return BaseCompressionStream;
 }
 export function makeCompressionStream(TransformStreamBase: typeof TransformStream): CompressionStreamConstructor {
-  class CompressionStream extends makeMulti(TransformStreamBase, compressors, 'CompressionStream') {}
-  return CompressionStream;
+  return makeMulti(TransformStreamBase, compressors, 'CompressionStream');
 }
 
 export function makeDecompressionStream(TransformStreamBase: typeof TransformStream): DecompressionStreamConstructor {
-  class DeompressionStream extends makeMulti(TransformStreamBase, decompressors, 'DecompressionStream') {}
-  return DeompressionStream;
+  return makeMulti(TransformStreamBase, compressors, 'DecompressionStream');
 }

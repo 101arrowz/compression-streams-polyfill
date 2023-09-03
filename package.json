@@ -1,7 +1,7 @@
 {
   "name": "compression-streams-polyfill",
   "description": "Lightweight polyfill/ponyfill for the Compression Streams API",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "Arjun Barrett <arjunbarrett@gmail.com>",
   "main": "lib/index.js",
   "types": "lib/global.d.ts",
@@ -40,9 +40,9 @@
     "deflate"
   ],
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.esm.json && node scripts/postbuild && yarn build:umd",
+    "build": "tsc && tsc -p tsconfig.esm.json && node scripts/postbuild && npm run build:umd",
     "build:umd": "microbundle -i src/index.ts -o umd/index.js --no-pkg-main -f umd --external none --no-sourcemap",
-    "prepack": "yarn build"
+    "prepack": "npm run build"
   },
   "dependencies": {
     "fflate": "^0.8.0"
