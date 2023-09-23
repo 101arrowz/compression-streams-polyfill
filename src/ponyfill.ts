@@ -86,20 +86,21 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
         throw new TypeError(`Failed to construct '${name}': Unsupported compression format: '${format}'`)
       }
       let compressor = new Processor();
-      let cb: () => void;
+      let endCb: () => void;
       super({
         start: controller => {
           compressor.ondata = (err, dat, final) => {
             if (err) controller.error(err);
             else if (dat) {
               controller.enqueue(dat);
-              if (final) controller.terminate();
+              if (final) {
+                if (endCb) endCb()
+                else controller.terminate()
+              }
             }
-            cb();
           }
         },
-        transform: chunk => new Promise(resolve => {
-          cb = resolve;
+        transform: chunk => {
           if (chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
           else if (ArrayBuffer.isView(chunk)) {
             chunk = new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength);
@@ -107,9 +108,9 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
             throw new TypeError("The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
           }
           compressor.push(chunk as Uint8Array);
-        }),
+        },
         flush: () => new Promise(resolve => {
-          cb = resolve;
+          endCb = resolve;
           compressor.push(new Uint8Array(0), true);
         })
       }, {
@@ -126,5 +127,5 @@ export function makeCompressionStream(TransformStreamBase: typeof TransformStrea
 }
 
 export function makeDecompressionStream(TransformStreamBase: typeof TransformStream): DecompressionStreamConstructor {
-  return makeMulti(TransformStreamBase, compressors, 'DecompressionStream');
+  return makeMulti(TransformStreamBase, decompressors, 'DecompressionStream');
 }
