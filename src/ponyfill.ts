@@ -1,7 +1,7 @@
 import {
   AsyncDeflate, Deflate, AsyncGzip, AsyncZlib, AsyncInflate, AsyncGunzip,
   AsyncUnzlib, AsyncFlateStreamHandler, FlateStreamHandler, Gzip, Zlib,
-  Gunzip, Unzlib, Inflate
+  Gunzip, Unzlib, Inflate, AsyncFlateDrainHandler
 } from 'fflate';
 import {
   CompressionFormat, CompressionStreamConstructor,
@@ -19,12 +19,16 @@ interface BaseSyncStream {
 
 interface BaseStream {
   ondata: AsyncFlateStreamHandler;
+  ondrain?: AsyncFlateDrainHandler;
+  queuedSize: number;
   push: (chunk: Uint8Array, final?: boolean) => void;
 }
 
 const wrapSync = (Stream: { new(): BaseSyncStream }) => {
   class AsyncWrappedStream implements BaseStream {
     ondata: AsyncFlateStreamHandler;
+    ondrain?: AsyncFlateDrainHandler;
+    queuedSize: number;
     private i: InstanceType<typeof Stream>;
 
     constructor() {
@@ -36,7 +40,10 @@ const wrapSync = (Stream: { new(): BaseSyncStream }) => {
 
     push(data: Uint8Array, final?: boolean) {
       try {
-        this.i.push(data, final)
+        this.queuedSize += data.length;
+        this.i.push(data, final);
+        this.queuedSize -= data.length;
+        if (this.ondrain) this.ondrain(data.length);
       } catch (err) {
         this.ondata(err, null, final || false)
       }
@@ -81,12 +88,15 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
       if (!arguments.length) {
         throw new TypeError(`Failed to construct '${name}': 1 argument required, but only 0 present.`);
       }
+
       const Processor = processors[format];
       if (!Processor) {
         throw new TypeError(`Failed to construct '${name}': Unsupported compression format: '${format}'`)
       }
+
       let compressor = new Processor();
       let endCb: () => void;
+
       super({
         start: controller => {
           compressor.ondata = (err, dat, final) => {
@@ -108,11 +118,23 @@ const makeMulti = (TransformStreamBase: typeof TransformStream, processors: Reco
             throw new TypeError("The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
           }
           compressor.push(chunk as Uint8Array);
+
+          // use fflate internal buffering to keep worker message channel fed
+          if (compressor.queuedSize >= 32768) {
+            return new Promise(resolve => {
+              compressor.ondrain = () => {
+                if (compressor.queuedSize < 32768) resolve();
+              }
+            })
+          }
         },
         flush: () => new Promise(resolve => {
           endCb = resolve;
           compressor.push(new Uint8Array(0), true);
         })
+      }, {
+        size: chunk => chunk.byteLength | 0,
+        highWaterMark: 65536
       }, {
         size: chunk => chunk.byteLength | 0,
         highWaterMark: 65536

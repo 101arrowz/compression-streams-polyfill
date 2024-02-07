@@ -1,7 +1,7 @@
 {
   "name": "compression-streams-polyfill",
   "description": "Lightweight polyfill/ponyfill for the Compression Streams API",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "author": "Arjun Barrett <arjunbarrett@gmail.com>",
   "main": "lib/index.js",
   "types": "lib/global.d.ts",
@@ -45,10 +45,10 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "fflate": "^0.8.0"
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "microbundle": "^0.15.1",
-    "typescript": "^4.9.3"
+    "typescript": "^5.3.3"
   }
 }
